@@ -1,4 +1,4 @@
-package com.example.security;
+package com.example.security.config;
 
 import com.example.security.login.AccountDTO;
 import com.example.security.repository.AccountRepository;
@@ -41,7 +41,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean // 스프링에 등록(추후에 재채용 가능성)
-    public PasswordEncoder passwordEncoder() {
+    public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
@@ -49,19 +49,27 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     // configure -> http 요청이 들어왔을 떄의 설정
 
+
+    //Security를 쓰면 자동으로 세션 사용
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
-                .antMatchers("/login").permitAll() // 인증없이 lgoin 페이지 사용 가능
-                .antMatchers("/register").permitAll() // 인증없이 register 페이지 사용 가능
+                .antMatchers("/register").anonymous() // 인증없이 register 페이지 사용 가능
+                .antMatchers("/contents/basic").hasAnyRole("basic","premium") // hasAnyRole(...) -> ...역할들중 아무거나 있으면 해당 url에 접근 가능
+                .antMatchers("/contents/premium").hasRole("premium") // hasRole(...) -> ...역할이 있어야 해당 url에 접근 가능
                 .anyRequest().authenticated() // 나머지의 요청은 인증필요
                 .and()
                 .formLogin() // form을 이용해서 로그인 할 것이다.
                 .loginPage("/login") // 로그인 페이지 URL
                 .defaultSuccessUrl("/home") // 로그인 성공 후 이용할 URL
+                .permitAll()
+                .and()
+                .logout()
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/login?logout")
+                .invalidateHttpSession(true) // 로그아웃시 세션 무묘화
+                .deleteCookies("JSESSIONID") // 쿠키 지우기
                 .permitAll();
-//                .and()
-//                .logout()
 //                .and()
 //                .csrf().disable();
     }
